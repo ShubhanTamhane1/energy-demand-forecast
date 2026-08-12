@@ -1,0 +1,24 @@
+# Data (raw/interim/processed) — not committed
+data/*
+!data/**/.gitkeep
+
+# MLflow local runs/artifacts
+mlflow/mlruns/
+mlflow/*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
