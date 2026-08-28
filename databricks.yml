@@ -1,0 +1,23 @@
+bundle:
+  name: energy-demand-forecast
+
+resources:
+  jobs:
+    pull_recent_demand:
+      name: pull_recent_demand
+      trigger:
+        periodic:
+          interval: 1
+          unit: HOURS
+      tasks:
+        - task_key: pull_recent_demand
+          notebook_task:
+            notebook_path: ./src/ingestion/pull_recent_demand.py
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-fabd11bb-a1ee.cloud.databricks.com
+      profile: Energy-Forecast
