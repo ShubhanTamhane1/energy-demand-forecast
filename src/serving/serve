@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# SageMaker's container contract runs `docker run <image> serve`, which
+# overrides any Dockerfile CMD (no ENTRYPOINT is set) -- so this script must
+# exist, be executable, and be on PATH under the exact name "serve".
+set -e
+exec uvicorn app:app --host 0.0.0.0 --port 8080

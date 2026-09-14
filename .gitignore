@@ -6,6 +6,13 @@ data/*
 mlflow/mlruns/
 mlflow/*.db
 
+# Downloaded model artifact for serving (reproducible via src/serving/download_model.py)
+src/serving/model/
+
+# requests_cache artifacts from local API testing
+*.cache.sqlite
+.cache
+
 # Python
 __pycache__/
 *.py[cod]

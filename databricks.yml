@@ -13,6 +13,9 @@ resources:
         - task_key: pull_recent_demand
           notebook_task:
             notebook_path: ./src/ingestion/pull_recent_demand.py
+        - task_key: pull_recent_weather
+          notebook_task:
+            notebook_path: ./src/ingestion/pull_recent_weather.py
 
 targets:
   dev:

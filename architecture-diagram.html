@@ -1,0 +1,438 @@
+<title>Demand Forecast Pipeline</title>
+<style>
+  :root {
+    --bg: #edeff3;
+    --surface: #ffffff;
+    --surface-2: #f4f6f8;
+    --ink: #161b22;
+    --muted: #5b6472;
+    --line: #3c4654;
+    --line-soft: #c1c8d1;
+    --accent: #bd5f27;
+    --accent-ink: #7a3c15;
+    --accent-soft: #f4e3d2;
+    --env-databricks: #3e6e9e;
+    --env-databricks-soft: #e1ebf4;
+    --env-local: #6b7280;
+    --env-local-soft: #e7e8ea;
+    --env-aws: #9c7a24;
+    --env-aws-soft: #f1e9cf;
+    --env-external: #4b7a5e;
+    --env-external-soft: #e2eee6;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10161f;
+      --surface: #182130;
+      --surface-2: #131a26;
+      --ink: #e9edf2;
+      --muted: #98a2ae;
+      --line: #7c8896;
+      --line-soft: #35404d;
+      --accent: #e4914f;
+      --accent-ink: #f3c299;
+      --accent-soft: #3a2a1b;
+      --env-databricks: #7fb0de;
+      --env-databricks-soft: #1e2e3e;
+      --env-local: #a7aeb8;
+      --env-local-soft: #232830;
+      --env-aws: #d7b45c;
+      --env-aws-soft: #33291a;
+      --env-external: #8fc3a2;
+      --env-external-soft: #1d2c22;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #10161f;
+    --surface: #182130;
+    --surface-2: #131a26;
+    --ink: #e9edf2;
+    --muted: #98a2ae;
+    --line: #7c8896;
+    --line-soft: #35404d;
+    --accent: #e4914f;
+    --accent-ink: #f3c299;
+    --accent-soft: #3a2a1b;
+    --env-databricks: #7fb0de;
+    --env-databricks-soft: #1e2e3e;
+    --env-local: #a7aeb8;
+    --env-local-soft: #232830;
+    --env-aws: #d7b45c;
+    --env-aws-soft: #33291a;
+    --env-external: #8fc3a2;
+    --env-external-soft: #1d2c22;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    margin: 0;
+    padding: 48px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .page {
+    width: 100%;
+    max-width: 980px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-bottom: 1px solid var(--line-soft);
+    padding-bottom: 24px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: var(--font-mono);
+    font-size: clamp(26px, 4vw, 34px);
+    font-weight: 700;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .subhead {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .diagram-frame {
+    width: 100%;
+    overflow-x: auto;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 4px;
+    padding: 8px;
+  }
+
+  svg.diagram {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    margin: 0 auto;
+    color: var(--line);
+  }
+
+  svg.diagram text {
+    fill: var(--ink);
+    font-family: var(--font-mono);
+  }
+
+  svg.diagram .box-title {
+    font-weight: 700;
+  }
+
+  svg.diagram .box-detail {
+    fill: var(--muted);
+  }
+
+  svg.diagram .arrow-label {
+    fill: var(--muted);
+    font-size: 11px;
+  }
+
+  svg.diagram .stage-title {
+    fill: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  svg.diagram .tag-text {
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+  }
+
+  figcaption {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 68ch;
+  }
+</style>
+
+<div class="page">
+  <header>
+    <span class="eyebrow">ISO-NE Demand Forecast</span>
+    <h1>Pipeline Architecture</h1>
+    <p class="subhead">
+      Hourly ingestion into Unity Catalog, a feature and training pipeline
+      tracked in MLflow, and a containerized model served from Amazon
+      SageMaker — the full path a single hourly demand reading takes from a
+      public API to a live forecast.
+    </p>
+  </header>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background: var(--env-external)"></span>External API</span>
+    <span class="legend-item"><span class="legend-dot" style="background: var(--env-databricks)"></span>Databricks</span>
+    <span class="legend-item"><span class="legend-dot" style="background: var(--env-local)"></span>Local machine</span>
+    <span class="legend-item"><span class="legend-dot" style="background: var(--env-aws)"></span>AWS</span>
+  </div>
+
+  <figure>
+    <div class="diagram-frame">
+      <svg class="diagram" viewBox="0 0 1100 2315" role="img" aria-label="Data flows hourly from the EIA and Open-Meteo APIs into a Databricks job that merges it into Delta tables; a feature pipeline joins and engineers a training table; MLflow with Optuna trains and registers a model; the production model is downloaded, containerized with FastAPI, pushed to ECR, and served from a SageMaker endpoint that a client invokes for a demand forecast.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+          </marker>
+          <marker id="arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+          </marker>
+          <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="var(--line-soft)" opacity="0.5"></circle>
+          </pattern>
+        </defs>
+
+        <rect x="0" y="0" width="1100" height="2315" fill="url(#grid)"></rect>
+
+        <!-- ===== Stage 1: Data sources ===== -->
+        <g>
+          <rect x="150" y="40" width="320" height="125" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="378" y="50" width="82" height="18" rx="9" fill="var(--env-external-soft)"></rect>
+          <text x="419" y="62.5" text-anchor="middle" class="tag-text" fill="var(--env-external)">EXTERNAL</text>
+          <text x="170" y="90" class="box-title" font-size="15">EIA Open Data API</text>
+          <text x="170" y="112" class="box-detail" font-size="12">electricity/rto/region-data</text>
+          <text x="170" y="130" class="box-detail" font-size="12">ISO-NE hourly demand · type=D</text>
+
+          <rect x="630" y="40" width="320" height="125" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="858" y="50" width="82" height="18" rx="9" fill="var(--env-external-soft)"></rect>
+          <text x="899" y="62.5" text-anchor="middle" class="tag-text" fill="var(--env-external)">EXTERNAL</text>
+          <text x="650" y="90" class="box-title" font-size="15">Open-Meteo Forecast API</text>
+          <text x="650" y="112" class="box-detail" font-size="12">api.open-meteo.com/v1/forecast</text>
+          <text x="650" y="130" class="box-detail" font-size="12">Boston hourly weather (proxy)</text>
+        </g>
+
+        <line x1="310" y1="165" x2="310" y2="233" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="322" y="203" class="arrow-label">poll hourly</text>
+        <line x1="790" y1="165" x2="790" y2="233" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="802" y="203" class="arrow-label">poll hourly</text>
+
+        <!-- ===== Stage 2: Hourly ingestion job ===== -->
+        <g>
+          <rect x="140" y="235" width="820" height="190" rx="4" fill="var(--surface-2)" stroke="var(--line-soft)" stroke-width="1.5" stroke-dasharray="5 4"></rect>
+          <rect x="798" y="248" width="122" height="18" rx="9" fill="var(--env-databricks-soft)"></rect>
+          <text x="859" y="260.5" text-anchor="middle" class="tag-text" fill="var(--env-databricks)">DATABRICKS</text>
+          <text x="164" y="262" class="stage-title" font-size="13">HOURLY INGESTION JOB · trigger.periodic 1h · serverless</text>
+
+          <rect x="160" y="290" width="300" height="110" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <text x="180" y="318" class="box-title" font-size="14">pull_recent_demand.py</text>
+          <text x="180" y="340" class="box-detail" font-size="12">48h rolling lookback window</text>
+          <text x="180" y="358" class="box-detail" font-size="12">self-heals against missed runs</text>
+
+          <rect x="640" y="290" width="300" height="110" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <text x="660" y="318" class="box-title" font-size="14">pull_recent_weather.py</text>
+          <text x="660" y="340" class="box-detail" font-size="12">past_days=2, forecast_days=1</text>
+          <text x="660" y="358" class="box-detail" font-size="12">drops any hour later than now</text>
+        </g>
+
+        <line x1="310" y1="400" x2="310" y2="493" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="322" y="450" class="arrow-label">MERGE upsert</text>
+        <line x1="790" y1="400" x2="790" y2="493" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="802" y="450" class="arrow-label">MERGE upsert</text>
+
+        <!-- ===== Stage 3: Delta tables ===== -->
+        <g>
+          <rect x="150" y="495" width="320" height="110" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="378" y="505" width="92" height="18" rx="9" fill="var(--env-databricks-soft)"></rect>
+          <text x="424" y="517.5" text-anchor="middle" class="tag-text" fill="var(--env-databricks)">DATABRICKS · UC</text>
+          <text x="170" y="537" class="box-title" font-size="14">iso_ne_demand</text>
+          <text x="170" y="558" class="box-detail" font-size="12">workspace.default (Delta)</text>
+          <text x="170" y="576" class="box-detail" font-size="12">period (UTC) · value (MWh)</text>
+
+          <rect x="630" y="495" width="320" height="110" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="858" y="505" width="92" height="18" rx="9" fill="var(--env-databricks-soft)"></rect>
+          <text x="904" y="517.5" text-anchor="middle" class="tag-text" fill="var(--env-databricks)">DATABRICKS · UC</text>
+          <text x="650" y="537" class="box-title" font-size="14">boston_weather</text>
+          <text x="650" y="558" class="box-detail" font-size="12">workspace.default (Delta)</text>
+          <text x="650" y="576" class="box-detail" font-size="12">period · temp · precip · snow</text>
+        </g>
+
+        <path d="M310,605 L470,683" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></path>
+        <text x="336" y="655" class="arrow-label">read</text>
+        <path d="M790,605 L630,683" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></path>
+        <text x="720" y="655" class="arrow-label">read</text>
+
+        <!-- ===== Stage 4: Feature engineering ===== -->
+        <g>
+          <rect x="350" y="685" width="400" height="140" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="678" y="695" width="62" height="18" rx="9" fill="var(--env-databricks-soft)"></rect>
+          <text x="709" y="707.5" text-anchor="middle" class="tag-text" fill="var(--env-databricks)">DBX</text>
+          <text x="370" y="717" class="box-title" font-size="15">Feature Engineering</text>
+          <text x="370" y="739" class="box-detail" font-size="12">join on period (UTC-aligned)</text>
+          <text x="370" y="757" class="box-detail" font-size="12">calendar + weather-derived +</text>
+          <text x="370" y="775" class="box-detail" font-size="12">demand lag/rolling · build_features.py</text>
+        </g>
+
+        <line x1="550" y1="825" x2="550" y2="893" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="562" y="863" class="arrow-label">write</text>
+
+        <!-- ===== Stage 4b: feature table ===== -->
+        <g>
+          <rect x="350" y="895" width="400" height="100" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="678" y="905" width="92" height="18" rx="9" fill="var(--env-databricks-soft)"></rect>
+          <text x="724" y="917.5" text-anchor="middle" class="tag-text" fill="var(--env-databricks)">DATABRICKS · UC</text>
+          <text x="370" y="937" class="box-title" font-size="14">iso_ne_features</text>
+          <text x="370" y="958" class="box-detail" font-size="12">22 features · full year, hourly</text>
+        </g>
+
+        <line x1="550" y1="995" x2="550" y2="1063" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="562" y="1033" class="arrow-label">chronological 80/20 split</text>
+
+        <!-- ===== Stage 5: Training ===== -->
+        <g>
+          <rect x="310" y="1065" width="480" height="180" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="678" y="1075" width="92" height="18" rx="9" fill="var(--env-databricks-soft)"></rect>
+          <text x="724" y="1087.5" text-anchor="middle" class="tag-text" fill="var(--env-databricks)">DATABRICKS · UC</text>
+          <text x="330" y="1097" class="box-title" font-size="15">Model Training — serverless job</text>
+          <text x="330" y="1121" class="box-detail" font-size="12">MLflow tracking + Optuna HPO</text>
+          <text x="330" y="1141" class="box-detail" font-size="12">Linear · ElasticNet · Random Forest ·</text>
+          <text x="330" y="1161" class="box-detail" font-size="12">XGBoost · SVM</text>
+          <text x="330" y="1183" class="box-detail" font-size="12">metrics: RMSE · MAE · MAPE · R²</text>
+        </g>
+
+        <line x1="550" y1="1245" x2="550" y2="1313" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="562" y="1283" class="arrow-label">register best run</text>
+
+        <!-- ===== Stage 5b: Registry ===== -->
+        <g>
+          <rect x="310" y="1315" width="480" height="130" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="628" y="1325" width="142" height="18" rx="9" fill="var(--env-databricks-soft)"></rect>
+          <text x="699" y="1337.5" text-anchor="middle" class="tag-text" fill="var(--env-databricks)">DATABRICKS · UC</text>
+          <text x="330" y="1355" class="box-title" font-size="15">Unity Catalog Model Registry</text>
+          <text x="330" y="1377" class="box-detail" font-size="12">iso_ne_demand_forecast</text>
+          <rect x="330" y="1391" width="330" height="26" rx="13" fill="var(--accent-soft)"></rect>
+          <text x="345" y="1408" font-size="12" font-weight="700" fill="var(--accent-ink)">@prod → XGBoost (tuned) · MAPE 7.3%</text>
+        </g>
+
+        <line x1="550" y1="1445" x2="550" y2="1513" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="562" y="1483" class="arrow-label">download @prod artifact</text>
+
+        <!-- ===== Stage 6: Download ===== -->
+        <g>
+          <rect x="350" y="1515" width="400" height="100" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="678" y="1525" width="72" height="18" rx="9" fill="var(--env-local-soft)"></rect>
+          <text x="714" y="1537.5" text-anchor="middle" class="tag-text" fill="var(--env-local)">LOCAL</text>
+          <text x="370" y="1557" class="box-title" font-size="14">Download model artifact</text>
+          <text x="370" y="1578" class="box-detail" font-size="11.5">mlflow.artifacts.download_artifacts</text>
+          <text x="370" y="1596" class="box-detail" font-size="11.5">models:/…iso_ne_demand_forecast@prod</text>
+        </g>
+
+        <line x1="550" y1="1615" x2="550" y2="1673" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="562" y="1649" class="arrow-label">bake into image</text>
+
+        <!-- ===== Stage 6b: FastAPI + Docker ===== -->
+        <g>
+          <rect x="350" y="1675" width="400" height="110" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="678" y="1685" width="72" height="18" rx="9" fill="var(--env-local-soft)"></rect>
+          <text x="714" y="1697.5" text-anchor="middle" class="tag-text" fill="var(--env-local)">LOCAL</text>
+          <text x="370" y="1717" class="box-title" font-size="14">FastAPI + Docker</text>
+          <text x="370" y="1739" class="box-detail" font-size="12">/predict · /invocations · /ping</text>
+          <text x="370" y="1757" class="box-detail" font-size="12">serve script on PATH (SageMaker contract)</text>
+        </g>
+
+        <line x1="550" y1="1785" x2="550" y2="1843" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="562" y="1819" class="arrow-label">docker push</text>
+
+        <!-- ===== Stage 6c: ECR ===== -->
+        <g>
+          <rect x="350" y="1845" width="400" height="100" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="698" y="1855" width="52" height="18" rx="9" fill="var(--env-aws-soft)"></rect>
+          <text x="724" y="1867.5" text-anchor="middle" class="tag-text" fill="var(--env-aws)">AWS</text>
+          <text x="370" y="1887" class="box-title" font-size="14">Amazon ECR</text>
+          <text x="370" y="1908" class="box-detail" font-size="12">iso-ne-demand-forecast:latest</text>
+          <text x="370" y="1926" class="box-detail" font-size="12">private image registry</text>
+        </g>
+
+        <line x1="550" y1="1945" x2="550" y2="2003" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <text x="562" y="1979" class="arrow-label">create-model → create-endpoint</text>
+
+        <!-- ===== Stage 6d: SageMaker ===== -->
+        <g>
+          <rect x="350" y="2005" width="400" height="110" rx="3" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"></rect>
+          <rect x="698" y="2015" width="52" height="18" rx="9" fill="var(--env-aws-soft)"></rect>
+          <text x="724" y="2027.5" text-anchor="middle" class="tag-text" fill="var(--env-aws)">AWS</text>
+          <text x="370" y="2047" class="box-title" font-size="14">SageMaker Endpoint</text>
+          <text x="370" y="2069" class="box-detail" font-size="12">real-time inference · ml.m5.large</text>
+          <text x="370" y="2087" class="box-detail" font-size="12">container runs: docker run &lt;image&gt; serve</text>
+        </g>
+
+        <line x1="550" y1="2115" x2="550" y2="2173" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrow-accent)"></line>
+        <text x="562" y="2149" class="arrow-label" font-weight="700" fill="var(--accent-ink)">InvokeEndpoint → MWh forecast</text>
+
+        <!-- ===== Stage 7: Client ===== -->
+        <g>
+          <rect x="350" y="2175" width="400" height="100" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <rect x="678" y="2185" width="82" height="18" rx="9" fill="var(--env-external-soft)"></rect>
+          <text x="719" y="2197.5" text-anchor="middle" class="tag-text" fill="var(--env-external)">EXTERNAL</text>
+          <text x="370" y="2217" class="box-title" font-size="15" fill="var(--accent-ink)">Client / API caller</text>
+          <text x="370" y="2239" font-size="12" fill="var(--accent-ink)">receives a demand forecast (MWh)</text>
+          <text x="370" y="2257" font-size="12" fill="var(--accent-ink)">for the requested hour</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>
+      Hourly ingestion writes to two Delta tables in Unity Catalog; a join
+      and feature pipeline builds the training table; MLflow with Optuna
+      tunes five model families and registers the winner as <code>@prod</code>;
+      that model is downloaded, containerized with FastAPI, pushed to ECR,
+      and served from a SageMaker endpoint a client can invoke directly.
+    </figcaption>
+  </figure>
+</div>

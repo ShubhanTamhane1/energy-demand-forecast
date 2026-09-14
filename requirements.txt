@@ -1,8 +1,13 @@
 pandas
 numpy
 scikit-learn
+xgboost==3.4.1
 mlflow
 fastapi
 uvicorn
 requests
 python-dotenv
+openmeteo-requests
+requests-cache
+retry-requests
+holidays
