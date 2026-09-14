@@ -51,13 +51,13 @@ FastAPI  →  Docker  →  Amazon ECR  →  SageMaker real-time endpoint
 
 Five model families, each tuned with Optuna against a chronological inner validation split (never the final test set):
 
-| Model | RMSE (MWh) | MAE (MWh) | MAPE | R² | Fit time |
+| Model | RMSE (MWh) | MAE (MWh) | MAPE | Fit time |
 |---|---|---|---|---|---|
-| **XGBoost (tuned)** — `@prod` | 1,575 | **1,140** | **7.27%** | 0.71 | 0.95s |
-| SVM / SVR (tuned) | 1,491 | 1,168 | 7.72% | 0.74 | 1.48s |
-| ElasticNet (tuned) | 1,447 | 1,151 | 7.80% | 0.76 | 0.03s |
-| Linear Regression (significant features) | 1,436 | 1,166 | 7.98% | **0.76** | 0.07s |
-| Random Forest (tuned) | 1,769 | 1,280 | 8.10% | 0.64 | 3.50s |
+| **XGBoost (tuned)** — `@prod` | 1,575 | **1,140** | **7.27%** | 0.95s |
+| SVM / SVR (tuned) | 1,491 | 1,168 | 7.72% | 1.48s |
+| ElasticNet (tuned) | 1,447 | 1,151 | 7.80% | 0.03s |
+| Linear Regression (significant features) | 1,436 | 1,166 | 7.98%  0.07s |
+| Random Forest (tuned) | 1,769 | 1,280 | 8.10% | 3.50s |
 
 **XGBoost is `@prod`**, selected on MAPE — the industry-standard metric for load forecasting, since it's scale-free and directly interpretable as % error. Worth noting: Linear Regression/ElasticNet actually edge it out on R². The demand signal turned out to be strongly linear — dominated by `lag_24h` (0.87 correlation with demand on its own) — which is why a well-specified linear model stayed competitive with tuned tree ensembles throughout this project, including beating an *untuned* XGBoost baseline earlier on. SHAP and OLS significance testing (see `CLAUDE.md`) confirm the same two signals drive every model: recent demand (lags/rolling means) and thermal load (heating/cooling degree hours).
 
