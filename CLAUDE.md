@@ -10,7 +10,7 @@ Electric grid operators need accurate short-term load forecasts to balance suppl
 
 ## Target Variable
 - **What's predicted:** Total electrical load (MW) for a region over a future interval (e.g., next hour or next day / day-ahead).
-- **Prediction horizon:** TBD — start with day-ahead (24hr) hourly forecasts, the standard grid-operator framing.
+- **Prediction horizon:** day-ahead (24hr) hourly forecasts, the standard grid-operator framing — every lag feature (`lag_24h`/`48h`/`168h`) is ≥24h old relative to the target hour, so all are known at forecast-issue time; only the target hour's weather/calendar are needed on top. Caveat: training/evaluation used actual observed weather for the target hour, not a day-ahead weather forecast, so real-world day-ahead accuracy also depends on weather forecast quality, which hasn't been measured.
 - **Type:** Regression (continuous numeric target).
 - **Evaluation metrics:** RMSE, MAE, MAPE — MAPE is the industry-standard metric for load forecasting since it's interpretable as % error.
 
@@ -132,7 +132,7 @@ energy-demand-forecast/
 - **SageMaker instance:** `ml.m5.large` (`ml.t2`/`ml.t3` rejected — deprecated/unsupported for real-time endpoints).
 
 ## Open Decisions
-- Exact prediction horizon (hourly vs. day-ahead)
 - Whether to extend into price (LMP) forecasting as a phase-2 model chained off demand predictions
+- Whether to validate day-ahead accuracy against real forecasted weather (day-ahead weather forecast for the target hour) rather than actual observed weather, which is what training/evaluation used so far
 - Whether to port feature engineering + training onto the *live* Delta tables (currently both run against the one-time historical backfill) once the live tables accumulate enough history to be useful
 - Whether to pursue a fair rolling one-step-ahead SARIMAX comparison (the one tried was evaluated on an unconditional long-horizon forecast, which isn't the regime this system actually runs in)
